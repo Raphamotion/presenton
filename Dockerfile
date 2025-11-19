@@ -34,7 +34,6 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 COPY --from=build /app /app
 
 ENV VIRTUAL_ENV=/opt/presenton/.venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN python3 -m venv $VIRTUAL_ENV && \
     "$VIRTUAL_ENV/bin/pip" install --no-cache-dir --upgrade pip && \
@@ -57,6 +56,8 @@ RUN python3 -m venv $VIRTUAL_ENV && \
       redis \
       nltk && \
     "$VIRTUAL_ENV/bin/pip" install --no-cache-dir docling --extra-index-url https://download.pytorch.org/whl/cpu
+
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN mkdir -p /app_data
 
