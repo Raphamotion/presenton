@@ -65,18 +65,18 @@ Presenton gives you complete control over your AI presentation workflow. Choose 
 
 ##### Linux/MacOS (Bash/Zsh Shell):
 ```bash
-docker run -it --name presenton -p 5000:80 -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton -p 3000:3000 -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 ##### Windows (PowerShell):
 ```bash
-docker run -it --name presenton -p 5000:80 -v "${PWD}\app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton -p 3000:3000 -v "${PWD}\app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 #### 2. Open Presenton
-Open http://localhost:5000 on browser of your choice to use Presenton.
+Open http://localhost:3000 on browser of your choice to use Presenton.
 
-> **Note: You can replace 5000 with any other port number of your choice to run Presenton on a different port number.**
+> **Note: You can replace 3000 with any other port number of your choice to run Presenton on a different port number.**
 
 ## Deployment Configurations
 
@@ -116,27 +116,27 @@ You can disable anonymous telemetry using the following environment variable:
 
 ### Using OpenAI
 ```bash
-docker run -it --name presenton -p 5000:80 -e LLM="openai" -e OPENAI_API_KEY="******" -e IMAGE_PROVIDER="dall-e-3" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton -p 3000:3000 -e LLM="openai" -e OPENAI_API_KEY="******" -e IMAGE_PROVIDER="dall-e-3" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 ### Using Google
 ```bash
-docker run -it --name presenton -p 5000:80 -e LLM="google" -e GOOGLE_API_KEY="******" -e IMAGE_PROVIDER="gemini_flash" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton -p 3000:3000 -e LLM="google" -e GOOGLE_API_KEY="******" -e IMAGE_PROVIDER="gemini_flash" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 ### Using Ollama
 ```bash
-docker run -it --name presenton -p 5000:80 -e LLM="ollama" -e OLLAMA_MODEL="llama3.2:3b" -e IMAGE_PROVIDER="pexels" -e PEXELS_API_KEY="*******" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton -p 3000:3000 -e LLM="ollama" -e OLLAMA_MODEL="llama3.2:3b" -e IMAGE_PROVIDER="pexels" -e PEXELS_API_KEY="*******" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 ### Using Anthropic
 ```bash
-docker run -it --name presenton -p 5000:80 -e LLM="anthropic" -e ANTHROPIC_API_KEY="******" -e IMAGE_PROVIDER="pexels" -e PEXELS_API_KEY="******" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton -p 3000:3000 -e LLM="anthropic" -e ANTHROPIC_API_KEY="******" -e IMAGE_PROVIDER="pexels" -e PEXELS_API_KEY="******" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 ### Using OpenAI Compatible API
 ```bash
-docker run -it -p 5000:80 -e CAN_CHANGE_KEYS="false"  -e LLM="custom" -e CUSTOM_LLM_URL="http://*****" -e CUSTOM_LLM_API_KEY="*****" -e CUSTOM_MODEL="llama3.2:3b" -e IMAGE_PROVIDER="pexels" -e  PEXELS_API_KEY="********" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it -p 3000:3000 -e CAN_CHANGE_KEYS="false"  -e LLM="custom" -e CUSTOM_LLM_URL="http://*****" -e CUSTOM_LLM_API_KEY="*****" -e CUSTOM_MODEL="llama3.2:3b" -e IMAGE_PROVIDER="pexels" -e  PEXELS_API_KEY="********" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 #### Running Presenton with GPU Support
@@ -146,10 +146,27 @@ To use GPU acceleration with Ollama models, you need to install and configure th
 Once the NVIDIA Container Toolkit is installed and configured, you can run Presenton with GPU support by adding the `--gpus=all` flag:
 
 ```bash
-docker run -it --name presenton --gpus=all -p 5000:80 -e LLM="ollama" -e OLLAMA_MODEL="llama3.2:3b" -e IMAGE_PROVIDER="pexels" -e PEXELS_API_KEY="*******" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
+docker run -it --name presenton --gpus=all -p 3000:3000 -e LLM="ollama" -e OLLAMA_MODEL="llama3.2:3b" -e IMAGE_PROVIDER="pexels" -e PEXELS_API_KEY="*******" -e CAN_CHANGE_KEYS="false" -v "./app_data:/app_data" ghcr.io/presenton/presenton:latest
 ```
 
 > **Note:** GPU acceleration significantly improves the performance of Ollama models, especially for larger models. Make sure you have sufficient GPU memory for your chosen model.
+
+## Running Presenton locally with Bun
+
+If you prefer to run Presenton directly on your machine, Bun handles the full stack (Next.js UI + FastAPI backend + MCP server).
+
+```bash
+# Install Next.js dependencies and produce the production build
+bun run build
+
+# Run the Bun gateway + FastAPI backend + Next.js server
+OPENAI_API_KEY=sk-... bun run start
+
+# Development mode with hot reload
+bun run dev
+```
+
+By default the Bun gateway listens on **http://localhost:3000** and proxies `/api/v1/...` routes to the FastAPI backend running on the same container.
 
 ## Generate Presentation over API
 
@@ -192,7 +209,7 @@ Content-Type: `application/json`
 #### Example Request
 
 ```bash
-curl -X POST http://localhost:5000/api/v1/ppt/presentation/generate \
+curl -X POST http://localhost:3000/api/v1/ppt/presentation/generate \
   -H "Content-Type: application/json" \
   -d '{
     "content": "Introduction to Machine Learning",

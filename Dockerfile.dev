@@ -1,42 +1,51 @@
-FROM python:3.11-slim-bookworm
+# syntax=docker/dockerfile:1.7
 
-# Install Node.js and npm
-RUN apt-get update && apt-get install -y \
-  nginx \
-  curl \
-  libreoffice \
-  fontconfig \
-  chromium
-
-# Install Node.js 20 using NodeSource repository
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-  apt-get install -y nodejs
-
-
-# Change working directory
+FROM oven/bun:1
 WORKDIR /app
 
-RUN ls -a
+ENV NODE_ENV=development \
+    PORT=3000 \
+    APP_DATA_DIRECTORY=/app_data \
+    TEMP_DIRECTORY=/tmp/presenton \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# Set environment variables
-ENV APP_DATA_DIRECTORY=/app_data
-ENV TEMP_DIRECTORY=/tmp/presenton
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-venv \
+    python3-pip \
+    libreoffice \
+    fontconfig \
+    chromium \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install ollama
-# RUN curl -fsSL http://ollama.com/install.sh | sh
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Install dependencies for FastAPI
-RUN pip install aiohttp aiomysql aiosqlite asyncpg fastapi[standard] \
-  pathvalidate pdfplumber chromadb sqlmodel \
-  anthropic google-genai openai fastmcp dirtyjson
-RUN pip install docling --extra-index-url https://download.pytorch.org/whl/cpu
+COPY . .
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+RUN python3 -m pip install --upgrade pip && \
+    pip install --no-cache-dir \
+      aiohttp \
+      aiomysql \
+      aiosqlite \
+      asyncpg \
+      fastapi[standard] \
+      pathvalidate \
+      pdfplumber \
+      chromadb \
+      sqlmodel \
+      anthropic \
+      google-genai \
+      openai \
+      fastmcp \
+      dirtyjson \
+      python-pptx \
+      redis \
+      nltk && \
+    pip install --no-cache-dir docling --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Expose the port
-EXPOSE 80
+RUN mkdir -p /app_data
 
-# Start the servers
-CMD ["node", "/app/start.js", "--dev"]
+EXPOSE 3000
+
+CMD ["bun", "run", "dev"]
