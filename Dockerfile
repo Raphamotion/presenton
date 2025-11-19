@@ -1,61 +1,61 @@
-FROM python:3.11-slim-bookworm
+# syntax=docker/dockerfile:1.7
 
-# Install Node.js and npm
-RUN apt-get update && apt-get install -y \
-    nginx \
-    curl \
-    libreoffice \
-    fontconfig \
-    chromium
-
-
-# Install Node.js 20 using NodeSource repository
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
-
-
-# Create a working directory
-WORKDIR /app  
-
-# Set environment variables
-ENV APP_DATA_DIRECTORY=/app_data
-ENV TEMP_DIRECTORY=/tmp/presenton
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-
-# Install ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
-# Install dependencies for FastAPI
-RUN pip install aiohttp aiomysql aiosqlite asyncpg fastapi[standard] \
-    pathvalidate pdfplumber chromadb sqlmodel \
-    anthropic google-genai openai fastmcp dirtyjson
-RUN pip install docling --extra-index-url https://download.pytorch.org/whl/cpu
-
-# Install dependencies for Next.js
-WORKDIR /app/servers/nextjs
-COPY servers/nextjs/package.json servers/nextjs/package-lock.json ./
-RUN npm install
-
-
-# Copy Next.js app
-COPY servers/nextjs/ /app/servers/nextjs/
-
-# Build the Next.js app
-WORKDIR /app/servers/nextjs
-RUN npm run build
-
+FROM oven/bun:1 AS build
 WORKDIR /app
 
-# Copy FastAPI
-COPY servers/fastapi/ ./servers/fastapi/
-COPY start.js LICENSE NOTICE ./
+COPY package.json ./
+COPY servers/nextjs/package.json servers/nextjs/package-lock.json servers/nextjs/bun.lock ./servers/nextjs/
+RUN cd servers/nextjs && bun install
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY . .
+RUN cd servers/nextjs && bunx next build
 
-# Expose the port
-EXPOSE 80
+FROM oven/bun:1 AS runner
+WORKDIR /app
 
-# Start the servers
-CMD ["node", "/app/start.js"]
+ENV NODE_ENV=production \
+    PORT=3000 \
+    APP_DATA_DIRECTORY=/app_data \
+    TEMP_DIRECTORY=/tmp/presenton \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-venv \
+    python3-pip \
+    libreoffice \
+    fontconfig \
+    chromium \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+COPY --from=build /app /app
+
+RUN python3 -m pip install --upgrade pip && \
+    pip install --no-cache-dir \
+      aiohttp \
+      aiomysql \
+      aiosqlite \
+      asyncpg \
+      fastapi[standard] \
+      pathvalidate \
+      pdfplumber \
+      chromadb \
+      sqlmodel \
+      anthropic \
+      google-genai \
+      openai \
+      fastmcp \
+      dirtyjson \
+      python-pptx \
+      redis \
+      nltk && \
+    pip install --no-cache-dir docling --extra-index-url https://download.pytorch.org/whl/cpu
+
+RUN mkdir -p /app_data
+
+EXPOSE 3000
+
+CMD ["bun", "run", "start"]
